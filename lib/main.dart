@@ -11,6 +11,7 @@ late cFunction f;
 
 double globalX = 0;
 double globalY = 0;
+double? min = null;
 
 void main() {
   f = cFunction(function: 'x^2+y^2');
@@ -39,34 +40,66 @@ class MyHomePage extends StatelessWidget {
     String value = graph();
     String options = generateOptions(value);
     dev.log(options);
-    return Column(
-      children: [
-        Container(
-          child: Echarts(
-            extensions: [glScript],
-            captureAllGestures: true,
-            option: options,
+    return Scaffold(
+      body: Column(
+        children: [
+          Container(
+            child: Echarts(
+              extensions: [glScript],
+              captureAllGestures: true,
+              option: options,
+            ),
+            width: Get.width,
+            height: Get.height - 200,
           ),
-          width: Get.width,
-          height: Get.height - 200,
-        ),
-      ],
+          Container(
+            height: 20,
+            color: Colors.blue,
+          ),
+          Expanded(
+            child: Container(
+              child: Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Функция: ${f.function}'),
+                    SizedBox(
+                      width: 10,
+                    ),
+                    Text('Минимальный: $min'),
+                    SizedBox(
+                      width: 10,
+                    ),
+                    Text('МинАлгоритма: $min'),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-String graph(){
+String graph() {
+  min = null;
   List<List<double>> z = [];
-  for(double i = -1; i <= 1; i += 0.5){
-    for(double j = -1; j <= 1; j += 0.5){
+  for (double i = -1; i <= 1; i += 0.05) {
+    for (double j = -1; j <= 1; j += 0.05) {
       double res = f.calc(x: j, y: i);
+      if (min == null) {
+        min = res;
+      } else if (min! > res) {
+        min = res;
+      }
       z.add([j, i, res]);
     }
   }
   return z.toString();
 }
 
-String generateOptions(String value){
+String generateOptions(String value) {
   return '''
 {
   tooltip: {},
