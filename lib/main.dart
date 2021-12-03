@@ -5,6 +5,7 @@ import 'package:flutter_echarts/flutter_echarts.dart';
 import 'package:get/get.dart';
 import 'dart:developer' as dev;
 
+import 'bacteria.dart';
 import 'glScript.dart' show glScript;
 
 late cFunction f;
@@ -16,6 +17,10 @@ double? min = null;
 void main() {
   f = cFunction(function: 'x^2+y^2');
   f.calc(x: 2, y: 2);
+
+  BacteriaCalculate bc = BacteriaCalculate();
+  bc.Start();
+
   runApp(const MyApp());
 }
 
