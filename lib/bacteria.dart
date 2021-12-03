@@ -175,15 +175,12 @@ class BacteriaCalculate {
   }
 
   // Функция "оценивания" клетки
-  void evaluate(List<Bacteria> cells, double d_attr,
+  void evaluate(Bacteria cell, List<Bacteria> cells, double d_attr,
       double w_attr, double h_rep, int w_rep) {
 
-    cells.forEach((element) {
-      element.Cost = f.calc(x: element.vector![0], y: element.vector![1]);
-      element.Inter = attract_repel(element, cells, d_attr, w_attr, h_rep, w_rep);
-      element.Fitness = element.Cost + element.Inter;
-    });
-
+    cell.Cost = f.calc(x: cell.vector![0], y: cell.vector![1]);
+    cell.Inter = attract_repel(cell, cells, d_attr, w_attr, h_rep, w_rep);
+    cell.Fitness = cell.Cost + cell.Inter;
   }
 
   List<double> tumble_cell(
@@ -227,19 +224,17 @@ class BacteriaCalculate {
 
         // count++;
         // debug.log('${element.vector} ${count}');
-      evaluate(cells, d_attr, w_attr, h_rep, w_rep);
-
       cells.forEach((element) {
+        evaluate(element, cells, d_attr, w_attr, h_rep, w_rep);
         double sum_nutrients = 0.0;
         if (best == null || element.Cost < best.Cost) best = element.Clone();
         sum_nutrients += element.Fitness;
         for (int m = 0; m < swim_length; m++) {
           Bacteria new_cell = Bacteria();
           new_cell.vector = (tumble_cell(search_space, element, step_size));
-
-          evaluate(cells, d_attr, w_attr, h_rep, w_rep);
-
-          if (element.Cost < best.Cost) if (new_cell.Fitness >
+          evaluate(element, cells, d_attr, w_attr, h_rep, w_rep);
+          if (element.Cost < best.Cost)
+            if (new_cell.Fitness >
               element.Fitness) break;
           element = new_cell;
 
