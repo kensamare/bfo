@@ -37,6 +37,8 @@ dependencies:
   math_expressions: ^2.2.0
   flutter_echarts: ^2.3.0
   get: ^4.3.8
+  eticon_extension:
+    git: git://github.com/kensamare/eticon_extension.git
 
 dev_dependencies:
   flutter_test:

@@ -1,4 +1,5 @@
 import 'package:math_expressions/math_expressions.dart';
+import 'dart:math' as math;
 
 class cFunction{
   final String function;
@@ -10,6 +11,10 @@ class cFunction{
     ContextModel ctx = ContextModel();
     Variable x1 = Variable('x');
     ctx.bindVariable(x1, Number(x));
+    Variable pi = Variable('pi');
+    ctx.bindVariable(pi, Number(math.pi));
+    Variable e = Variable('e');
+    ctx.bindVariable(e, Number(math.e));
     if(y != null){
       Variable y1 = Variable('y');
       ctx.bindVariable(y1, Number(y));

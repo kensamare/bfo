@@ -3,10 +3,28 @@ import 'dart:core';
 import 'dart:math';
 
 import 'main.dart';
-import 'dart:developer' as debug;
+import 'dart:developer' as dev;
+
+class Vec {
+  Vec() : vector = [];
+
+  Vec.fromList(List<double> vec) : vector = vec;
+  late List<double> vector;
+
+  double operator [](int index) {
+    return vector[index];
+  }
+
+  double? value;
+
+  @override
+  String toString() {
+    return '\x1B[36mVec: ${vector.toString()}\x1B[30m\n\x1B[35mValue: ${value}\x1B[30m';
+  }
+}
 
 class Bacteria {
-  List? vector;
+  Vec vector = Vec();
   double? cost;
   double? fitness;
   double? sum_nutrients;
@@ -36,36 +54,6 @@ class Bacteria {
     cost = Cost;
   }
 
-  // List vector
-  // {
-  //     get => vector;
-  //     set => vector = value;
-  // }
-
-  // double Cost
-  // {
-  //     get => cost;
-  //     set => cost = value;
-  // }
-
-  // double Fitness
-  // {
-  //     get => fitness;
-  //     set => fitness = value;
-  // }
-
-  // double Sum_nutrients
-  // {
-  //     get => sum_nutrients;
-  //     set => sum_nutrients = value;
-  // }
-
-  // double Inter
-  // {
-  //     get => inter;
-  //     set => inter = value;
-  // }
-
   Bacteria Clone() {
     dynamic buffer = Bacteria();
 
@@ -83,11 +71,13 @@ class Bacteria {
   }
 }
 
+List<Bacteria> cells = [];
+
 class BacteriaCalculate {
   int p = 5;
 
-  List<double> Min = [-2, -2];
-  List<double> Max = [2, 2];
+  List<double> Min = [-5, -5];
+  List<double> Max = [5, 5];
 
   int p_m = 50; //Количество бактерий в популяции
 
@@ -120,23 +110,24 @@ class BacteriaCalculate {
 
   int size = 2;
 
-  //private List<Vec> m_points;
-
   int m_p = 0;
   int m_k = 0;
 
-  List<double> RandomVecInD(List<double> min, List<double> max,
-      {int? problem_size}) {
-    List<double> v = List.filled(2, 0);
+  Vec RandomVecInD(List<double> min, List<double> max, {int? problem_size = 2}) {
+    Vec v = Vec();
+    v.vector = List.filled(2, 0);
 
     for (int i = 0; i < problem_size!; i++) {
-      v[i] = (Random().nextDouble() * (max[i] - min[i]) + max[i]);
+      double f = (Random().nextDouble() +
+          (Random().nextInt((max[i] - min[i]).toInt()) + min[i]));
+      // dev.log(f.toString());
+      v.vector[i] = f;
     }
 
     return v;
   }
 
-  List<double>? generate_random_direction(int problem_size) {
+  Vec generate_random_direction(int problem_size) {
     List<double> min = List.filled(problem_size, 0);
     List<double> max = List.filled(problem_size, 0);
 
@@ -148,15 +139,14 @@ class BacteriaCalculate {
     return RandomVecInD(min, max, problem_size: problem_size);
   }
 
-  double compute_cell_interaction(
-      Bacteria cell, List<Bacteria> cells, double d, double w) {
+  double compute_cell_interaction(Bacteria cell, double d, double w) {
     double sum = 0.0;
 
     for (int i = 0; i < cells.length; i++) {
       double diff = 0.0;
 
       for (int k = 0; k < size; k++) {
-        diff += pow((cell.vector![k] - cells[i].vector![k]), 2.0);
+        diff += pow((cell.vector[k] - cells[i].vector[k]), 2.0);
       }
       sum += d * exp(w * diff);
     }
@@ -165,34 +155,34 @@ class BacteriaCalculate {
   }
 
   // Функция "притягивания - отталкивания"
-  double attract_repel(Bacteria cell, List<Bacteria> cells, double d_attr,
-      double w_attr, double h_rep, int w_rep) {
-    double attract = compute_cell_interaction(cell, cells, -d_attr, -w_attr);
-    double repel =
-        compute_cell_interaction(cell, cells, h_rep, -w_rep.toDouble());
+  double attract_repel(
+      Bacteria cell, double d_attr, double w_attr, double h_rep, int w_rep) {
+    double attract = compute_cell_interaction(cell, -d_attr, -w_attr);
+    double repel = compute_cell_interaction(cell, h_rep, -w_rep.toDouble());
 
     return attract + repel;
   }
 
   // Функция "оценивания" клетки
-  void evaluate(Bacteria cell, List<Bacteria> cells, double d_attr,
-      double w_attr, double h_rep, int w_rep) {
-
-    cell.Cost = f.calc(x: cell.vector![0], y: cell.vector![1]);
-    cell.Inter = attract_repel(cell, cells, d_attr, w_attr, h_rep, w_rep);
+  Bacteria evaluate(
+      Bacteria cell, double d_attr, double w_attr, double h_rep, int w_rep) {
+    cell.Cost = f.calc(x: cell.vector[0], y: cell.vector[1]);
+    cell.Inter = attract_repel(cell, d_attr, w_attr, h_rep, w_rep);
     cell.Fitness = cell.Cost + cell.Inter;
+    return cell;
   }
 
   List<double> tumble_cell(
       List<List<double>> search_space, Bacteria cell, double step_size) {
     List<double> step = [];
 
-    step = generate_random_direction(search_space[0].length)!;
+    step = generate_random_direction(search_space[0].length).vector;
 
-    List<double> vector = [search_space[0].length.toDouble()];
+    List<double> vector =
+        List.filled(2, 0); // = [search_space[0].length.toDouble()];
 
     for (int i = 0; i < vector.length; i++) {
-      vector[i] = cell.vector![i] + step_size * step[i];
+      vector[i] = cell.vector[i] + step_size * step[i];
 
       if (vector[i] < search_space[i][0]) vector[i] = search_space[i][0];
       if (vector[i] > search_space[i][1]) vector[i] = search_space[i][1];
@@ -203,7 +193,6 @@ class BacteriaCalculate {
 
   // Функция расчёта жизненого цикла клетки
   Bacteria chemotaxis(
-      List<Bacteria> cells,
       List<List<double>> search_space,
       int chem_steps,
       int swim_length,
@@ -214,28 +203,21 @@ class BacteriaCalculate {
       int w_rep) {
     Bacteria best = Bacteria();
     best = cells[0];
-    // cells.forEach((element) {
-    //   debug.log('${element.vector}');
-    // });
 
     for (int j = 0; j < chem_steps; j++) {
       List<Bacteria> moved_cells = [];
-      // int count = 0;
-
-        // count++;
-        // debug.log('${element.vector} ${count}');
       cells.forEach((element) {
-        evaluate(element, cells, d_attr, w_attr, h_rep, w_rep);
+        element = evaluate(element, d_attr, w_attr, h_rep, w_rep);
         double sum_nutrients = 0.0;
         if (best == null || element.Cost < best.Cost) best = element.Clone();
         sum_nutrients += element.Fitness;
         for (int m = 0; m < swim_length; m++) {
           Bacteria new_cell = Bacteria();
-          new_cell.vector = (tumble_cell(search_space, element, step_size));
-          evaluate(element, cells, d_attr, w_attr, h_rep, w_rep);
-          if (element.Cost < best.Cost)
-            if (new_cell.Fitness >
-              element.Fitness) break;
+          new_cell.vector =
+              Vec.fromList(tumble_cell(search_space, element, step_size));
+          new_cell = evaluate(new_cell, d_attr, w_attr, h_rep, w_rep);
+          if (element.Cost < best.Cost) if (new_cell.Fitness > element.Fitness)
+            break;
           element = new_cell;
 
           sum_nutrients += element.Fitness;
@@ -244,38 +226,7 @@ class BacteriaCalculate {
         moved_cells.add(element.Clone());
       });
 
-      // });
-      // for (int i = 0; i < cells.length; i++) {
-      //   double sum_nutrients = 0.0;
-      //
-      //   evaluate(cells[i], cells, d_attr, w_attr, h_rep, w_rep);
-      //
-      //   if (best == null || cells[i].Cost < best.Cost) best = cells[i].Clone();
-      //
-      //   sum_nutrients += cells[i].Fitness;
-      //
-      //   for (int m = 0; m < swim_length; m++) {
-      //     Bacteria new_cell = Bacteria();
-      //     new_cell.vector = (tumble_cell(search_space, cells[i], step_size));
-      //
-      //     evaluate(new_cell, cells, d_attr, w_attr, h_rep, w_rep);
-      //
-      //     if (cells[i].Cost < best.Cost) if (new_cell.Fitness >
-      //         cells[i].Fitness) break;
-      //     cells[i] = new_cell;
-      //
-      //     sum_nutrients += cells[i].Fitness;
-      //   }
-      //
-      //   cells[i].Sum_nutrients = sum_nutrients;
-      //   moved_cells.add(cells[i].Clone());
-      // }
-
-      best.vector!.add(best.Cost);
-
-      // arr_temp.Add(best.vector);
-      print("${best.vector}");
-      // TakeFrame(false);
+      best.vector.value = best.Cost;
 
       cells = moved_cells;
     }
@@ -297,20 +248,15 @@ class BacteriaCalculate {
       double h_rep,
       int w_rep,
       double p_eliminate) {
-    List<Bacteria> cells = [];
-
     List<double> min = List.filled(2, 0);
     List<double> max = List.filled(2, 0);
 
     for (int i = 0; i < pop_size; i++) {
       Bacteria buff = Bacteria();
       buff.vector = RandomVecInD(Min, Max, problem_size: 2);
+      // dev.log(buff.vector.toString(), name: 'RANDOMVEC');
       cells.add(buff.Clone());
     }
-    // cells.forEach((element) {
-    //   debug.log('${element.vector}', name: 'Debug1');
-    // });
-
 
     Bacteria best = Bacteria();
     Bacteria c_best = Bacteria();
@@ -319,15 +265,12 @@ class BacteriaCalculate {
 
     for (int l = 0; l < elim_disp_steps; l++) {
       for (int k = 0; k < repro_steps; k++) {
-        c_best = chemotaxis(cells, search_space, chem_steps, swim_length,
-            step_size, d_attr, w_attr, h_rep, w_rep);
+        c_best = chemotaxis(search_space, chem_steps, swim_length, step_size,
+            d_attr, w_attr, h_rep, w_rep);
 
         if (best == null || c_best.Cost < best.Cost) best = c_best;
 
-        best.vector!.add(best.Cost);
-        // buff_min.add(best.vector);
-        print("${best.vector}");
-        // TakeFrame(true);
+        best.vector.value = best.Cost;
 
         cells.sort((b1, b2) => b1.Sum_nutrients.compareTo(b2.Sum_nutrients));
 
@@ -342,25 +285,25 @@ class BacteriaCalculate {
       }
 
       for (int i = 0; i < cells.length; i++) {
-        if (Random().nextDouble() <= p_eliminate)
+        if (Random().nextDouble() <= p_eliminate) {
           cells[i].vector = RandomVecInD(min, max);
+        }
       }
     }
-
     return best;
   }
 
-  void Start() {
+  Bacteria Start() {
     m_p = 0;
     m_k = 0;
 
-    List m_result = [];
-    List best_bacteria = [];
+    Vec m_result = Vec();
+    List<Vec> best_bacteria = [];
     //Конфигурация проблемы
     int problem_size = 2;
     List<List<double>> search_space = [
-      [0, 0],
-      [0, 0]
+      [-2, 2],
+      [-2, 2]
     ];
     for (int i = 0, j = 0; i < problem_size && j < 2; i++, j++) {
       search_space[i][0] = Min[j];
@@ -390,10 +333,10 @@ class BacteriaCalculate {
         h_rep,
         w_rep,
         p_eliminate);
-    m_result = best.vector!;
+    m_result = best.vector;
 
     best_bacteria.add(m_result);
-    print("${m_result}");
+    print("\x1B[32mBEST OF THE BEST:\x1B[30m\n${m_result.toString()}");
+    return best;
   }
 }
-

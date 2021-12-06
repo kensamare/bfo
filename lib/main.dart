@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_echarts/flutter_echarts.dart';
 import 'package:get/get.dart';
 import 'dart:developer' as dev;
+import 'package:eticon_extension/eticon_extension.dart';
 
 import 'bacteria.dart';
 import 'glScript.dart' show glScript;
@@ -14,13 +15,17 @@ double globalX = 0;
 double globalY = 0;
 double? min = null;
 
+late Bacteria best;
+
 void main() {
-  f = cFunction(function: 'x^2+y^2');
-  f.calc(x: 2, y: 2);
-
+  ELogSettings.disableLogs(true);
+  f = cFunction(function: 'x^2+y^2');// функция сферы
+  // f = cFunction(function: '20+(x^2-10*cos(2*pi*x))+(y^2-10*cos(2*pi*y))');// функция Растринга
+  // f = cFunction(
+  //     function:
+  //         '-20*e^(-0.2*sqrt(0.5*(x^2)+(y^2)))-e^(0.5*(cos(2*pi*x)+cos(2*pi*y)))+20+2.718281828459045'); //Функция Экли
   BacteriaCalculate bc = BacteriaCalculate();
-  bc.Start();
-
+  best = bc.Start();
   runApp(const MyApp());
 }
 
@@ -44,7 +49,6 @@ class MyHomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     String value = graph();
     String options = generateOptions(value);
-    dev.log(options);
     return Scaffold(
       body: Column(
         children: [
@@ -61,25 +65,88 @@ class MyHomePage extends StatelessWidget {
             height: 20,
             color: Colors.blue,
           ),
-          Expanded(
+          SizedBox(height: 20,),
+          Text('Функция: ${f.function}'),
+          Center(
             child: Container(
-              child: Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('Функция: ${f.function}'),
-                    SizedBox(
-                      width: 10,
-                    ),
-                    Text('Минимальный: $min'),
-                    SizedBox(
-                      width: 10,
-                    ),
-                    Text('МинАлгоритма: $min'),
-                  ],
-                ),
+              margin: EdgeInsets.only(top: 20),
+              height: 100,
+              width: 800,
+              child: Table(
+                border: TableBorder.all(color: Colors.black, width: 1),
+                children: [
+                  // TableRow(),
+                  TableRow(
+                    children: [
+                      Container(),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text('X'),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text('Y'),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text('f(X, Y)'),
+                      ),
+                    ],
+                  ),
+                  TableRow(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text('Мин'),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(minX.toString()),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(minY.toString()),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(min.toString()),
+                      ),
+                    ],
+                  ),
+                  TableRow(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text('Бактерии'),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(best.vector[0].toString()),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(best.vector[1].toString()),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(best.cost.toString()),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
+            // child: Center(
+            //   child: Column(
+            //     mainAxisSize: MainAxisSize.min,
+            //     children: [
+            //       Text('Функция: ${f.function}'),
+            //       SizedBox(
+            //         width: 10,
+            //       ),
+            //     ],
+            //   ),
+            // ),
           ),
         ],
       ),
@@ -87,16 +154,23 @@ class MyHomePage extends StatelessWidget {
   }
 }
 
+double? minX;
+double? minY;
+
 String graph() {
   min = null;
   List<List<double>> z = [];
-  for (double i = -1; i <= 1; i += 0.05) {
-    for (double j = -1; j <= 1; j += 0.05) {
+  for (double i = -5; i <= 5; i += 0.05) {
+    for (double j = -5; j <= 5; j += 0.05) {
       double res = f.calc(x: j, y: i);
       if (min == null) {
         min = res;
+        minX = j;
+        minY = i;
       } else if (min! > res) {
         min = res;
+        minX = j;
+        minY = i;
       }
       z.add([j, i, res]);
     }
@@ -112,8 +186,8 @@ String generateOptions(String value) {
   visualMap: {
     show: false,
     dimension: 2,
-    min: -1,
-    max: 1,
+    min: 0,
+    max: 80,
     inRange: {
       color: [
         '#313695',
